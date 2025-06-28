@@ -279,3 +279,5 @@ export const Archive: React.FC = () => {
     </div>
   );
 };
+
+export default Archive;
