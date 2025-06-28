@@ -253,3 +253,5 @@ export const Important: React.FC = () => {
     </div>
   );
 };
+
+export default Important;
