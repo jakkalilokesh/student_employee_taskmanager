@@ -3,8 +3,8 @@ import { Amplify } from 'aws-amplify';
 const awsConfig = {
   Auth: {
     Cognito: {
-      userPoolId: 'us-east-1_XXXXXXXXX', // Replace with your User Pool ID
-      userPoolClientId: 'XXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with your App Client ID
+      userPoolId: 'eu-north-1_bKl8shmd3', // Replace with your User Pool ID
+      userPoolClientId: '7jpi11ra353h1nadammqhm2jtd', // Replace with your App Client ID
       signUpVerificationMethod: 'code',
       loginWith: {
         email: true,
