@@ -1,103 +1,88 @@
 import { Task } from '../types';
 
-// Mock API service - replace with actual AWS API Gateway endpoints
 class TaskService {
-  private apiUrl = 'https://your-api-gateway-url.execute-api.us-east-1.amazonaws.com/prod';
+  private apiUrl = import.meta.env.VITE_API_GATEWAY_URL;
 
   async getTasks(userId: string): Promise<Task[]> {
-    // Mock data for demonstration
-    const mockTasks: Task[] = [
-      {
-        id: '1',
-        userId,
-        title: 'Complete React Project',
-        description: 'Finish the task manager application with AWS integration',
-        category: 'work',
-        priority: 'high',
-        status: 'in-progress',
-        dueDate: new Date(Date.now() + 86400000).toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        tags: ['react', 'aws', 'project'],
-        reminders: {
-          email: true,
-          sms: false,
-          time: '09:00',
+    try {
+      const token = await this.getAuthToken();
+      const response = await fetch(`${this.apiUrl}/tasks?userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-      },
-      {
-        id: '2',
-        userId,
-        title: 'Study for Exam',
-        description: 'Prepare for the upcoming computer science exam',
-        category: 'study',
-        priority: 'medium',
-        status: 'pending',
-        dueDate: new Date(Date.now() + 172800000).toISOString(),
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        tags: ['exam', 'study'],
-        reminders: {
-          email: true,
-          sms: true,
-          time: '08:00',
-        },
-      },
-      {
-        id: '3',
-        userId,
-        title: 'Team Meeting',
-        description: 'Weekly team sync meeting',
-        category: 'work',
-        priority: 'medium',
-        status: 'completed',
-        dueDate: new Date(Date.now() - 86400000).toISOString(),
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        tags: ['meeting', 'team'],
-        reminders: {
-          email: true,
-          sms: false,
-          time: '10:00',
-        },
-      },
-    ];
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockTasks;
+      });
+      if (!response.ok) throw new Error(await response.text());
+      return await response.json();
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+      return [];
+    }
   }
 
-  async createTask(userId: string, taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<Task> {
-    const newTask: Task = {
-      ...taskData,
-      id: Date.now().toString(),
-      userId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return newTask;
+  async createTask(
+    userId: string,
+    taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ): Promise<Task> {
+    try {
+      const token = await this.getAuthToken();
+      const response = await fetch(`${this.apiUrl}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...taskData, userId }),
+      });
+      if (!response.ok) throw new Error(await response.text());
+      return await response.json();
+    } catch (err) {
+      console.error('Failed to create task:', err);
+      throw err;
+    }
   }
 
   async updateTask(id: string, updates: Partial<Task>): Promise<Task> {
-    // In a real implementation, this would make an API call
-    const updatedTask = {
-      id,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    } as Task;
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return updatedTask;
+    try {
+      const token = await this.getAuthToken();
+      const response = await fetch(`${this.apiUrl}/tasks/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error(await response.text());
+      return await response.json();
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      throw err;
+    }
   }
 
   async deleteTask(id: string): Promise<void> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    try {
+      const token = await this.getAuthToken();
+      const response = await fetch(`${this.apiUrl}/tasks/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error(await response.text());
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      throw err;
+    }
+  }
+
+  private async getAuthToken(): Promise<string> {
+    const { fetchAuthSession } = await import('aws-amplify/auth');
+    const session = await fetchAuthSession();
+    return session.tokens?.accessToken?.toString() || '';
   }
 }
 
