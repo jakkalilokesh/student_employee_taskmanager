@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
 
 import { LoginPage } from './components/auth/LoginPage';
-import Tasks from './pages/Tasks';
+import { Tasks } from './pages/Tasks'; // ✅ Fixed named import
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Archive from './pages/Archive';
