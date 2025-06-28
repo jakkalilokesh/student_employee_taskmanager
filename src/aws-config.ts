@@ -1,10 +1,10 @@
 import { Amplify } from 'aws-amplify';
 
-const awsConfig = {
+Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: 'eu-north-1_bKl8shmd3', // Replace with your User Pool ID
-      userPoolClientId: '7jpi11ra353h1nadammqhm2jtd', // Replace with your App Client ID
+      userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
+      userPoolClientId: import.meta.env.VITE_COGNITO_APP_CLIENT_ID,
       signUpVerificationMethod: 'code',
       loginWith: {
         email: true,
@@ -15,19 +15,15 @@ const awsConfig = {
   API: {
     REST: {
       TaskManagerAPI: {
-        endpoint: 'https://your-api-gateway-url.execute-api.us-east-1.amazonaws.com/prod',
-        region: 'us-east-1',
+        endpoint: import.meta.env.VITE_API_GATEWAY_URL,
+        region: import.meta.env.VITE_AWS_REGION,
       },
     },
   },
   Storage: {
     S3: {
-      bucket: 'your-s3-bucket-name',
-      region: 'us-east-1',
+      bucket: import.meta.env.VITE_S3_BUCKET_NAME,
+      region: import.meta.env.VITE_AWS_REGION,
     },
   },
-};
-
-Amplify.configure(awsConfig);
-
-export default awsConfig;
+});
