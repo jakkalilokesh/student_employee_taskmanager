@@ -335,3 +335,5 @@ export const Analytics: React.FC = () => {
     </div>
   );
 };
+
+export default Analytics;
