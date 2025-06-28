@@ -18,13 +18,12 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const useTask = () => {
   const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error('useTask must be used within a TaskProvider');
-  }
+  if (!context) throw new Error('useTask must be used within a TaskProvider');
   return context;
 };
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
@@ -36,19 +35,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     weeklyProgress: [],
   });
 
-  const { user } = useAuth();
-
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       refreshTasks();
     }
-  }, [user]);
+  }, [user?.id]);
 
   const refreshTasks = async () => {
-    if (!user) return;
-    
+    if (!user?.id) return;
+    setLoading(true);
     try {
-      setLoading(true);
       const userTasks = await taskService.getTasks(user.id);
       setTasks(userTasks);
       calculateStats(userTasks);
@@ -62,51 +58,48 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const calculateStats = (taskList: Task[]) => {
     const now = new Date();
-    const completed = taskList.filter(task => task.status === 'completed').length;
-    const pending = taskList.filter(task => task.status !== 'completed').length;
-    const overdue = taskList.filter(task => 
-      task.status !== 'completed' && new Date(task.dueDate) < now
-    ).length;
+    const completed = taskList.filter(t => t.status === 'completed').length;
+    const pending = taskList.filter(t => t.status !== 'completed').length;
+    const overdue = taskList.filter(t => t.status !== 'completed' && new Date(t.dueDate) < now).length;
+
+    const weeklyProgress = generateWeeklyProgress(taskList);
 
     setStats({
       totalTasks: taskList.length,
       completedTasks: completed,
       pendingTasks: pending,
       overdueTasks: overdue,
-      completionRate: taskList.length > 0 ? (completed / taskList.length) * 100 : 0,
-      weeklyProgress: generateWeeklyProgress(taskList),
+      completionRate: taskList.length ? (completed / taskList.length) * 100 : 0,
+      weeklyProgress,
     });
   };
 
   const generateWeeklyProgress = (taskList: Task[]) => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
       return date.toISOString().split('T')[0];
     }).reverse();
 
-    return last7Days.map(date => ({
+    return days.map(date => ({
       date,
-      completed: taskList.filter(task => 
-        task.status === 'completed' && 
-        task.updatedAt.startsWith(date)
-      ).length,
-      created: taskList.filter(task => 
-        task.createdAt.startsWith(date)
-      ).length,
+      completed: taskList.filter(t => t.status === 'completed' && t.updatedAt.startsWith(date)).length,
+      created: taskList.filter(t => t.createdAt.startsWith(date)).length,
     }));
   };
 
   const createTask = async (taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       const newTask = await taskService.createTask(user.id, taskData);
-      setTasks(prev => [...prev, newTask]);
-      calculateStats([...tasks, newTask]);
+      const updated = [...tasks, newTask];
+      setTasks(updated);
+      calculateStats(updated);
       toast.success('Task created successfully!');
-    } catch (error) {
-      console.error('Error creating task:', error);
+    } catch (err) {
+      console.error('Create task error:', err);
       toast.error('Failed to create task');
     }
   };
@@ -114,11 +107,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
       const updatedTask = await taskService.updateTask(id, updates);
-      setTasks(prev => prev.map(task => task.id === id ? updatedTask : task));
-      calculateStats(tasks.map(task => task.id === id ? updatedTask : task));
+      const updatedTasks = tasks.map(t => (t.id === id ? updatedTask : t));
+      setTasks(updatedTasks);
+      calculateStats(updatedTasks);
       toast.success('Task updated successfully!');
-    } catch (error) {
-      console.error('Error updating task:', error);
+    } catch (err) {
+      console.error('Update task error:', err);
       toast.error('Failed to update task');
     }
   };
@@ -126,17 +120,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteTask = async (id: string) => {
     try {
       await taskService.deleteTask(id);
-      const updatedTasks = tasks.filter(task => task.id !== id);
+      const updatedTasks = tasks.filter(t => t.id !== id);
       setTasks(updatedTasks);
       calculateStats(updatedTasks);
       toast.success('Task deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting task:', error);
+    } catch (err) {
+      console.error('Delete task error:', err);
       toast.error('Failed to delete task');
     }
   };
 
-  const value = {
+  const value: TaskContextType = {
     tasks,
     loading,
     stats,
