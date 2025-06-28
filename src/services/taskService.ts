@@ -6,15 +6,15 @@ class TaskService {
   async getTasks(userId: string): Promise<Task[]> {
     try {
       const token = await this.getAuthToken();
-      const response = await fetch(`${this.apiUrl}/tasks?userId=${userId}`, {
+      const res = await fetch(`${this.apiUrl}/tasks?userId=${userId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) throw new Error(await response.text());
-      return await response.json();
+      if (!res.ok) throw new Error(await res.text());
+      return await res.json();
     } catch (err) {
       console.error('Failed to fetch tasks:', err);
       return [];
@@ -27,16 +27,16 @@ class TaskService {
   ): Promise<Task> {
     try {
       const token = await this.getAuthToken();
-      const response = await fetch(`${this.apiUrl}/tasks`, {
+      const res = await fetch(`${this.apiUrl}/tasks`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ ...taskData, userId }),
       });
-      if (!response.ok) throw new Error(await response.text());
-      return await response.json();
+      if (!res.ok) throw new Error(await res.text());
+      return await res.json();
     } catch (err) {
       console.error('Failed to create task:', err);
       throw err;
@@ -46,16 +46,16 @@ class TaskService {
   async updateTask(id: string, updates: Partial<Task>): Promise<Task> {
     try {
       const token = await this.getAuthToken();
-      const response = await fetch(`${this.apiUrl}/tasks/${id}`, {
+      const res = await fetch(`${this.apiUrl}/tasks/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updates),
       });
-      if (!response.ok) throw new Error(await response.text());
-      return await response.json();
+      if (!res.ok) throw new Error(await res.text());
+      return await res.json();
     } catch (err) {
       console.error('Failed to update task:', err);
       throw err;
@@ -65,14 +65,14 @@ class TaskService {
   async deleteTask(id: string): Promise<void> {
     try {
       const token = await this.getAuthToken();
-      const response = await fetch(`${this.apiUrl}/tasks/${id}`, {
+      const res = await fetch(`${this.apiUrl}/tasks/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) throw new Error(await response.text());
+      if (!res.ok) throw new Error(await res.text());
     } catch (err) {
       console.error('Failed to delete task:', err);
       throw err;
@@ -82,7 +82,9 @@ class TaskService {
   private async getAuthToken(): Promise<string> {
     const { fetchAuthSession } = await import('aws-amplify/auth');
     const session = await fetchAuthSession();
-    return session.tokens?.accessToken?.toString() || '';
+    const token = session.tokens?.accessToken?.toString();
+    if (!token) throw new Error('No auth token found');
+    return token;
   }
 }
 
