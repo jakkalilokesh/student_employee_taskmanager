@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useAuth } from '../../context/AuthContext';
@@ -35,14 +35,16 @@ export const LoginPage: React.FC = () => {
 
     try {
       if (confirmationStep) {
+        console.log("🛂 Confirming sign-up for:", formData.email);
         await confirmSignUp({
           username: formData.email,
           confirmationCode: formData.confirmationCode,
         });
-        toast.success('Account confirmed successfully!');
+        toast.success('✅ Account confirmed! Please sign in.');
         setConfirmationStep(false);
         setIsLogin(true);
       } else if (isLogin) {
+        console.log("🔐 Signing in with:", formData.email);
         const { isSignedIn } = await signIn({
           username: formData.email,
           password: formData.password,
@@ -63,10 +65,16 @@ export const LoginPage: React.FC = () => {
               },
             },
           };
-          login(userData); // AuthContext handles redirect
+          login(userData);
           toast.success('Welcome back!');
         }
       } else {
+        if (formData.password !== formData.confirmPassword) {
+          toast.error('Passwords do not match');
+          return;
+        }
+
+        console.log("📝 Signing up user:", formData.email);
         await signUp({
           username: formData.email,
           password: formData.password,
@@ -78,11 +86,12 @@ export const LoginPage: React.FC = () => {
             },
           },
         });
-        toast.success('Account created! Please check your email for confirmation code.');
+        toast.success('✅ Account created! Check email for code.');
         setConfirmationStep(true);
       }
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred');
+      console.error("❌ Auth error:", error);
+      toast.error(error.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -117,14 +126,9 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 relative overflow-hidden">
-      {/* Background Animation */}
-      <div className="absolute inset-0">
-        {/* animated blur circles */}
-      </div>
-
+      <div className="absolute inset-0" />
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Branding */}
           <motion.div className="text-white text-center lg:text-left">
             <h1 className="text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
               Student & Employee<br />Task Manager
@@ -135,7 +139,6 @@ export const LoginPage: React.FC = () => {
             </p>
           </motion.div>
 
-          {/* Auth Form */}
           <motion.div className="w-full max-w-md mx-auto lg:max-w-lg">
             <Card className="backdrop-blur-sm bg-white/95 shadow-2xl border-0">
               <div className="text-center mb-6">
@@ -144,7 +147,6 @@ export const LoginPage: React.FC = () => {
                 </h2>
               </div>
 
-              {/* Demo Buttons */}
               {!confirmationStep && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">Demo Accounts:</h3>
@@ -163,7 +165,6 @@ export const LoginPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Auth Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {confirmationStep ? (
                   <input
@@ -204,7 +205,6 @@ export const LoginPage: React.FC = () => {
                         </select>
                       </>
                     )}
-
                     <input
                       type="email"
                       required
@@ -230,7 +230,6 @@ export const LoginPage: React.FC = () => {
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
-
                     {!isLogin && (
                       <input
                         type="password"
@@ -243,7 +242,6 @@ export const LoginPage: React.FC = () => {
                     )}
                   </>
                 )}
-
                 <Button type="submit" size="lg" loading={loading} className="w-full">
                   {confirmationStep ? 'Confirm Account' : isLogin ? 'Sign In' : 'Create Account'}
                 </Button>
